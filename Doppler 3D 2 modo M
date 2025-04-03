@@ -1,0 +1,97 @@
+function doppler3D2modoM
+%% He añadido líneas de código que me facilitan la realización de la práctica.
+%% Lee y convierte una imagen 3D de ecografía en un modo M. 
+
+close all
+close all
+
+% Se define la ruta relativa para guardar los resultados
+resultsDir = './results-doppler';
+
+% Se comprueba que existe la carpeta de resultados y si no la crea 
+if ~exist(resultsDir, 'dir')
+    mkdir(resultsDir);
+end
+
+
+% Se carga y se plotea la señal ECG
+ecg=load('Doppler-20250326/Doppler-Ecg.mat');
+campos_ecg = fieldnames(ecg);
+fprintf('ECG: Subconjuntos: %s\n', strjoin(campos_ecg, ', '));
+fprintf('ECG: Campos en "Attributes": %s\n', strjoin(fieldnames(ecg.Attributes), ', '));
+
+ecg_valores=ecg.Ecg;
+fprintf('ECG: Señal cargada con tamaño: %s\n', mat2str(size(ecg_valores)));
+ecg_t = ecg.Attributes.TimeStamps;
+fprintf('ECG: Timestamps cargados con tamaño: %s\n', mat2str(size(ecg_t)));
+figure(1); plot(ecg_t,ecg_valores); title('Señal ECG'); xlabel('Tiempo (s)'); ylabel('Amplitud'); xticks(24:0.3:29); grid on; % Se plotea la señal ECG vs tiempo
+saveas(gcf, fullfile(resultsDir, 'fig1_ECG.png'));
+
+
+% Se carga y se plotea la imagen del tejido
+B=load('Doppler-20250326/Doppler-Tissue.mat');
+campos_B = fieldnames(B);
+fprintf('Tejido: Subconjuntos: %s\n', strjoin(campos_B, ', '));
+fprintf('Tejido: Campos en "Attributes": %s\n', strjoin(fieldnames(B.Attributes), ', '));
+BTis = B.Tissue;
+fprintf('Tejido: Imagen cargada con tamaño: %s\n', mat2str(size(BTis)));
+figure(2); imagesc(squeeze(BTis(:,63,:))) % La evolución temporal del tejido en línea lateral 63
+colormap gray; colorbar;
+title('Evolución temporal del tejido en línea lateral 63');
+xlabel('Frame'); ylabel('Profundidad');
+saveas(gcf, fullfile(resultsDir, 'fig2_Tissue.png'));
+
+% Se realiza el ejercicio 7
+ts = B.Attributes.TimeStamps;
+% Se elige el frame a mostrar
+frame = 22;
+tiempo_seleccionado = ts(frame);
+% Se extrae la imagen en ese instante (profundidad × lateral)
+imagen_modoB = BTis(:,:,frame);
+figure;
+imagesc(imagen_modoB); colormap gray; colorbar;
+title(sprintf('Imagen de tejido en frame %d (t = %.2f s)', frame, tiempo_seleccionado));
+xlabel('Lateral (posición del haz)');
+ylabel('Profundidad'); axis normal;
+saveas(gcf, fullfile('./results-doppler', sprintf('fig_Tissue_Frame%d.png', frame)));
+
+
+% Se carga y se muestra la velocidad de flujo Doppler
+V=load('Doppler-20250326/Doppler-FlowVelocity.mat');
+campos_V = fieldnames(V);
+fprintf('Velocidad de flujo: Subconjuntos: %s\n', strjoin(campos_V, ', '));
+fprintf('Velocidad de flujo: Campos en "Attributes": %s\n', strjoin(fieldnames(V.Attributes), ', '));
+VFlow = V.FlowVelocity;
+fprintf('Velocidad de flujo: Datos cargados con tamaño: %s\n', mat2str(size(VFlow)));
+figure(3); imagesc(squeeze(VFlow(:,19,:)));title('Velocidad de flujo (Modo M)'); %COMENTARIO
+xlabel('Frame'); ylabel('Profundidad');
+colormap jet; colorbar;
+saveas(gcf, fullfile(resultsDir, 'fig3_FlowVelocity.png'));
+
+
+% Se carga y se muestra la potencia de flujo Doppler
+P=load('Doppler-20250326/Doppler-FlowPower.mat');
+campos_P = fieldnames(P);
+fprintf('Potencia de flujo: Subconjuntos: %s\n', strjoin(campos_P, ', '));
+fprintf('Potencia de flujo: Campos en "Attributes": %s\n', strjoin(fieldnames(P.Attributes), ', '));
+PFlow = P.FlowPower;
+fprintf('Potencia de flujo: Datos cargados con tamaño: %s\n', mat2str(size(PFlow)));
+figure(4); imagesc(squeeze(PFlow(:,19,:)));colormap hot;colorbar;title('Potencia de flujo (Modo M)'); % Se plotea la potencia de flujo en el mismo corte
+xlabel('Frame'); ylabel('Profundidad');
+saveas(gcf, fullfile(resultsDir, 'fig4_FlowPower.png'));
+
+
+Vc=VFlow;
+Vc(PFlow<40)=NaN; %% P<40 es un valor que se obtiene cualitativamente, mirando los valores de la barra de color, parece que lo que está por debajo de 40 es ruido. Poonemos esos píxeles en NaN, mejor que en 0, para que no den error al hacr operaciones como la división
+figure(5); imagesc(squeeze(Vc(:,19,:)));colormap jet;colorbar;title('Velocidad de flujo con potencia > 40');
+xlabel('Frame'); ylabel('Profundidad');
+saveas(gcf, fullfile(resultsDir, 'fig5_FlowVelocity_Filtered_40.png'));
+
+Vc=VFlow;
+Vc(PFlow<60)=NaN; %% pruebe distintos valores, hasta encontrar el que mejor se ajusta a la eliminación de ruido conservando el máximo de señal
+figure(6); imagesc(squeeze(Vc(:,19,:)));colormap jet;colorbar;title('Velocidad de flujo con potencia > 60'); xlabel('Frame'); ylabel('Profundidad');
+saveas(gcf, fullfile(resultsDir, 'fig6_FlowVelocity_Filtered_60.png'));
+
+endfunction
+
+doppler3D2modoM
