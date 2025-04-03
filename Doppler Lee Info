@@ -1,0 +1,27 @@
+function doppler_lee_info()
+%% Lista el contenido de la estructura Doppler_info.mat
+
+% Cierra todas las ventanas de figuras abiertas
+close all;
+
+% Carga el fichero desde la ruta y lo almacena en la variable info
+
+info = load('/home/ines/octave/Doppler-20250326/Doppler_info.mat');
+% Muestra en consola los nombres de los campos de info
+fieldnames(info)
+
+% Muestra en consola los nombres del campo Datasets de info
+fieldnames(info.Datasets)
+
+% Muestra en consola el contenido del campo Name de cada elemento de Datasets
+info.Datasets.Name
+
+% Muestra en consola el contenido del campo Attributes de info.
+info.Attributes
+
+% Muestra en consola el contenido del campo Name de cada elemento de Attributes
+info.Attributes.Name
+
+endfunction
+
+doppler_lee_info
